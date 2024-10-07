@@ -110,8 +110,78 @@ const Index = () => {
     ? isFlask
     : snapsDetected;
 
+  const handleJSR = async () => {
+    const data = await invokeSnap({ method: 'jsr' });
+    console.log(data);
+  };
   const handleSendHelloClick = async () => {
     await invokeSnap({ method: 'hello' });
+  };
+  const handleGetPublicKey = async () => {
+    const pubKey = await invokeSnap({
+      method: 'getPublicKey',
+      params: {
+        derivationPath: [`0'`, `0'`],
+        confirm: true, // @DEV not needed
+      },
+    });
+    console.log("pubKey:");
+    console.log(pubKey);
+    console.log(typeof(pubKey));
+    // console.log(pubKey.data);
+    // console.log(JSON.stringify(pubKey));
+  };
+  const handleGetPrivKey = async () => {
+    const res = await invokeSnap({
+      method: 'getPrivateKey',
+      params: {
+        derivationPath: [`1'`, `0'`],
+        confirm: true, // @DEV not needed
+      },
+    });
+    console.log("res:");
+    console.log(res);
+  };
+  const handleSendTxn = async () => {
+    const res = await invokeSnap({
+      method: 'sign&sendTxn',
+      params: {
+        derivationPath: [`0'`, `0'`],
+        // confirm: true,
+      },
+    });
+    console.log(res);
+  };
+  const handleSignTxn = async () => {
+    const res = await invokeSnap({
+      method: 'signTransaction',
+      params: {
+        derivationPath: [`0'`, `0'`],
+        message: 'Jai Siyaram!',
+      },
+    });
+    console.log(res);
+  };
+  const handleSignTxns = async () => {
+    const res = await invokeSnap({
+      method: 'signAllTransactions',
+      params: {
+        derivationPath: [`0'`, `0'`],
+        messages: ['Jai Siyaram!', '0xab7896'],
+      },
+    });
+    console.log(res);
+  };
+  const handleSignMsg = async () => {
+    const res = await invokeSnap({
+      method: 'signMessage',
+      params: {
+        derivationPath: [`0'`, `1'`],
+        message: 'Jai Siyaram!',
+        // message: '0x4A6169205369796172616D21',
+      },
+    });
+    console.log(res);
   };
 
   return (
@@ -190,6 +260,13 @@ const Index = () => {
             !shouldDisplayReconnectButton(installedSnap)
           }
         />
+        <button onClick={handleJSR}>JSR</button>
+        <button onClick={handleGetPublicKey}>Get Public Key</button>
+        <button onClick={handleGetPrivKey}>Get Priv Key</button>
+        <button onClick={handleSignTxn}>Sign Txn</button>
+        <button onClick={handleSendTxn}>Send Txn</button>
+        <button onClick={handleSignTxns}>Sign Multi Txn</button>
+        <button onClick={handleSignMsg}>Sign Msg</button>
         <Notice>
           <p>
             Please note that the <b>snap.manifest.json</b> and{' '}

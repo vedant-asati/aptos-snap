@@ -24,11 +24,16 @@
     "prepublishOnly": "mm-snap manifest",
     "serve": "mm-snap serve",
     "start": "mm-snap watch",
+    "dev": "yarn build && yarn serve",
     "test": "jest"
   },
   "dependencies": {
-    "@metamask/snaps-sdk": "^6.1.1",
-    "buffer": "^6.0.3"
+    "@aptos-labs/ts-sdk": "^1.29.0",
+    "@metamask/key-tree": "^9.1.2",
+    "@metamask/snaps-sdk": "^6.7.0",
+    "buffer": "^6.0.3",
+    "node-fetch": "^3.3.2",
+    "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
     "@jest/globals": "^29.5.0",
