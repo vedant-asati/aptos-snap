@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 
+import React, { useState } from 'react';
 import {
   ConnectButton,
   InstallFlaskButton,
@@ -15,6 +16,7 @@ import {
   useRequestSnap,
 } from '../hooks';
 import { isLocalSnap, shouldDisplayReconnectButton } from '../utils';
+import type { AccountData } from 'src/types/custom';
 
 const Container = styled.div`
   display: flex;
@@ -100,6 +102,60 @@ const ErrorMessage = styled.div`
   }
 `;
 
+const Select = styled.select`
+  padding: 0.8rem 1.2rem;
+  font-size: 1.6rem;
+  border: 1px solid ${({ theme }) => theme.colors.border?.default};
+  border-radius: ${({ theme }) => theme.radii.default};
+  background-color: ${({ theme }) => theme.colors.background?.default};
+  color: ${({ theme }) => theme.colors.text?.default};
+  width: 100%;
+  max-width: 20rem;
+  margin-bottom: 1.5rem;
+  outline: none;
+  transition: border-color 0.3s ease;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary?.default};
+  }
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.primary?.default};
+    box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.5);
+  }
+
+  option {
+    background-color: ${({ theme }) => theme.colors.background?.default};
+    color: ${({ theme }) => theme.colors.text?.default};
+    font-size: 1.6rem;
+  }
+`;
+
+const AccountDropdown = (
+  {
+    accounts,
+    setActiveAccount
+  }: {
+    accounts: AccountData[],
+    setActiveAccount: (account: AccountData) => void
+  }
+) => {
+
+  const handleAccountChange = (e) => {
+    setActiveAccount(accounts[e.target.value] as AccountData);
+  };
+
+  return (
+    <Select onChange={handleAccountChange}>
+      {accounts.map((account: AccountData, index: number) => (
+        <option key={index} value={index}>
+          {account.name}
+        </option>
+      ))}
+    </Select>
+  );
+};
+
 const Index = () => {
   const { error } = useMetaMaskContext();
   const { isFlask, snapsDetected, installedSnap } = useMetaMask();
@@ -110,54 +166,131 @@ const Index = () => {
     ? isFlask
     : snapsDetected;
 
+  // Standard: m / purpose' / coin_type' / account' / change / address_index
+  // derivation path to be appended to [`m`, `44'`, `637'`]
+
+  const [accounts, setAccounts] = useState<AccountData[]>([
+    {
+      name: 'Account 0',
+      derivationPath: [`0'`, `0'`]
+    },
+    {
+      name: 'Account 1',
+      derivationPath: [`1'`, `0'`]
+    },
+    {
+      name: 'Account 2',
+      derivationPath: [`2'`, `0'`]
+    },
+    {
+      name: 'Account 3',
+      derivationPath: [`3'`, `0'`]
+    },
+    {
+      name: 'Account 4',
+      derivationPath: [`4'`, `0'`]
+    },
+  ])
+  const [activeAccount, setActiveAccount] = useState<AccountData | undefined>(accounts[0]);
+
+  const [txnReceiverAddress, setTxnReceiverAddress] = useState<string>('');
+  const [txnAmount, setTxnAmount] = useState<string>('');
+  const [messageText, setMessageText] = useState<string>('')
+
+  // const handleGetAccountAddress = async () => {
+  //   const pubKey = await invokeSnap({
+  //     method: 'getAccountAddress',
+  //     params: {
+  //       derivationPath: [activeAccount], // Use active account
+  //       confirm: true,
+  //     },
+  //   });
+  //   console.log(pubKey);
+  // };
+
   const handleJSR = async () => {
     const data = await invokeSnap({ method: 'jsr' });
     console.log(data);
   };
-  const handleSendHelloClick = async () => {
-    await invokeSnap({ method: 'hello' });
+  const handleGetAccountAddress = async () => {
+    const pubKey = await invokeSnap({
+      method: 'getAccountAddress',
+      params: {
+        derivationPath: activeAccount?.derivationPath,
+        confirm: true, // @DEV not needed
+      },
+    });
   };
   const handleGetPublicKey = async () => {
     const pubKey = await invokeSnap({
       method: 'getPublicKey',
       params: {
-        derivationPath: [`0'`, `0'`],
+        derivationPath: activeAccount?.derivationPath,
         confirm: true, // @DEV not needed
       },
     });
-    console.log("pubKey:");
-    console.log(pubKey);
-    console.log(typeof(pubKey));
-    // console.log(pubKey.data);
-    // console.log(JSON.stringify(pubKey));
   };
-  const handleGetPrivKey = async () => {
+  const handleGetPrivateKey = async () => {
     const res = await invokeSnap({
       method: 'getPrivateKey',
       params: {
-        derivationPath: [`1'`, `0'`],
+        derivationPath: activeAccount?.derivationPath,
         confirm: true, // @DEV not needed
       },
     });
-    console.log("res:");
-    console.log(res);
   };
-  const handleSendTxn = async () => {
+  const handleCreateNewAccount = async () => {
+    const index = parseInt(accounts[accounts.length - 1]?.name.split(' ')[1] as string, 10);
+    if (!index) console.error('index isn\'t defined');
+    const newDerivationPath = [`${index + 1}'`, "0'"];
+
     const res = await invokeSnap({
-      method: 'sign&sendTxn',
+      method: 'createNewAccount',
       params: {
-        derivationPath: [`0'`, `0'`],
-        // confirm: true,
+        derivationPath: newDerivationPath,
+      },
+    });
+    console.log(res);
+    if (res) {
+      setAccounts((prev) => [
+        ...prev,
+        {
+          name: `Account ${index + 1}`,
+          derivationPath: [`${index + 1}'`, "0'"]
+        },
+      ])
+    }
+    return;
+  };
+  const handleTestSendTxn = async () => {
+    const res = await invokeSnap({
+      method: 'test_sign&sendTxn',
+      params: {
+        derivationPath: activeAccount?.derivationPath,
       },
     });
     console.log(res);
   };
-  const handleSignTxn = async () => {
+  const handleSendTxn = async () => {
+    console.log(txnReceiverAddress)
+    console.log(txnAmount)
     const res = await invokeSnap({
-      method: 'signTransaction',
+      method: 'sign&sendTxn',
       params: {
-        derivationPath: [`0'`, `0'`],
-        message: 'Jai Siyaram!',
+        derivationPath: activeAccount?.derivationPath,
+        txnDetails: {
+          receiver: txnReceiverAddress || "0x0",
+          amount: txnAmount,
+        }
+      },
+    });
+    console.log(res);
+  };
+  const handleTestSignTxn = async () => {
+    const res = await invokeSnap({
+      method: 'test_SignTxn',
+      params: {
+        derivationPath: activeAccount?.derivationPath,
       },
     });
     console.log(res);
@@ -166,7 +299,7 @@ const Index = () => {
     const res = await invokeSnap({
       method: 'signAllTransactions',
       params: {
-        derivationPath: [`0'`, `0'`],
+        derivationPath: activeAccount?.derivationPath,
         messages: ['Jai Siyaram!', '0xab7896'],
       },
     });
@@ -176,22 +309,43 @@ const Index = () => {
     const res = await invokeSnap({
       method: 'signMessage',
       params: {
-        derivationPath: [`0'`, `1'`],
-        message: 'Jai Siyaram!',
-        // message: '0x4A6169205369796172616D21',
+        derivationPath: activeAccount?.derivationPath,
+        message: messageText || 'Jai Siyaram!',
       },
     });
     console.log(res);
   };
 
+  const handleChange = (e) => {
+    switch (e.target.name) {
+      case 'amount': {
+        setTxnAmount(e.target.value);
+        break;
+      }
+      case 'receiverAddress': {
+        setTxnReceiverAddress(e.target.value);
+        break;
+      }
+      case 'messageText': {
+        setMessageText(e.target.value);
+        break;
+      }
+
+      default:
+        break;
+    }
+  }
+
   return (
     <Container>
       <Heading>
-        Welcome to <Span>template-snap</Span>
+        Welcome to <Span>Aptos-snap Interface</Span>
       </Heading>
       <Subtitle>
-        Get started by editing <code>src/index.tsx</code>
+        Get started by clicking on buttons below.
       </Subtitle>
+      <br />
+      <AccountDropdown accounts={accounts} setActiveAccount={setActiveAccount} />
       <CardContainer>
         {error && (
           <ErrorMessage>
@@ -243,12 +397,12 @@ const Index = () => {
         )}
         <Card
           content={{
-            title: 'Send Hello message',
+            title: 'Send JSR message',
             description:
               'Display a custom message within a confirmation screen in MetaMask.',
             button: (
               <SendHelloButton
-                onClick={handleSendHelloClick}
+                onClick={handleJSR}
                 disabled={!installedSnap}
               />
             ),
@@ -260,13 +414,102 @@ const Index = () => {
             !shouldDisplayReconnectButton(installedSnap)
           }
         />
-        <button onClick={handleJSR}>JSR</button>
-        <button onClick={handleGetPublicKey}>Get Public Key</button>
-        <button onClick={handleGetPrivKey}>Get Priv Key</button>
-        <button onClick={handleSignTxn}>Sign Txn</button>
-        <button onClick={handleSendTxn}>Send Txn</button>
-        <button onClick={handleSignTxns}>Sign Multi Txn</button>
-        <button onClick={handleSignMsg}>Sign Msg</button>
+        <Card
+          content={{
+            title: 'Send Message',
+            description:
+              <>
+                <label htmlFor="messageText">Message: </label>
+                <input type="text" name="messageText" id="messageText" placeholder='type your message...' value={messageText} onChange={handleChange} /> <br />
+              </>,
+            button: (
+              <SendHelloButton
+                onClick={handleSignMsg}
+                disabled={!installedSnap}
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Send Txn',
+            description:
+              <>
+                <label htmlFor="receiverAddress">Receiver: </label>
+                <input type="text" name="receiverAddress" id="receiverAddress" placeholder='address of receiver...' value={txnReceiverAddress} onChange={handleChange} /> <br />
+                <label htmlFor="amount">Amount: </label>
+                <input type="text" name="amount" id="amount" placeholder='amount to send...' value={txnAmount} onChange={handleChange} />
+              </>,
+            // 'Display a custom message within a confirmation screen in MetaMask.',
+            button: (
+              <SendHelloButton
+                onClick={handleSendTxn}
+                disabled={!installedSnap}
+              />
+            ),
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Create a new Account',
+            description:
+              <>
+                <button onClick={handleCreateNewAccount} disabled={!installedSnap}>Create New Acc</button>
+              </>,
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Test',
+            description:
+              <>
+                <button onClick={handleTestSignTxn} disabled={!installedSnap} >Sign Test Txn</button>
+                <button onClick={handleSignTxns} disabled={!installedSnap}>Sign Multi Txn</button>
+              </>,
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Accounts Details',
+            description:
+              <>
+                <button onClick={handleGetAccountAddress} disabled={!installedSnap} >Get AccountAddress</button> <br />
+                <button onClick={handleGetPublicKey} disabled={!installedSnap} >Get Public Key</button> <br />
+                <button onClick={handleGetPrivateKey} disabled={!installedSnap} >Get Private Key</button>
+              </>,
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+
         <Notice>
           <p>
             Please note that the <b>snap.manifest.json</b> and{' '}
