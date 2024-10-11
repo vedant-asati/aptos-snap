@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ConnectButton,
   InstallFlaskButton,
@@ -134,7 +134,9 @@ const Select = styled.select`
 const AccountDropdown = (
   {
     accounts,
-    setActiveAccount
+    setActiveAccount,
+    toggleFetch,
+    setToggleFetch,
   }: {
     accounts: AccountData[],
     setActiveAccount: (account: AccountData) => void
@@ -146,7 +148,8 @@ const AccountDropdown = (
   };
 
   return (
-    <Select onChange={handleAccountChange}>
+    // @TODO fix
+    <Select onChange={handleAccountChange} onClick={() => setToggleFetch(!toggleFetch)}>
       {accounts.map((account: AccountData, index: number) => (
         <option key={index} value={index}>
           {account.name}
@@ -192,21 +195,28 @@ const Index = () => {
     },
   ])
   const [activeAccount, setActiveAccount] = useState<AccountData | undefined>(accounts[0]);
+  const [toggleFetch, setToggleFetch] = useState(true);
+
+  // @TODO fix
+  const getData = async () => {
+    const data = await invokeSnap({ method: 'getData' });
+    console.log(data);
+    if (data?.accounts) {
+      setAccounts(data.accounts);
+      setActiveAccount(data.accounts[0]);
+    };
+  };
+
+  useEffect(() => {
+    getData();
+    return console.log("hi")
+  }, [toggleFetch]);
 
   const [txnReceiverAddress, setTxnReceiverAddress] = useState<string>('');
+  const [storageKey, setStorageKey] = useState<string>('');
+  const [storageValue, setStorageValue] = useState<string>('');
   const [txnAmount, setTxnAmount] = useState<string>('');
   const [messageText, setMessageText] = useState<string>('')
-
-  // const handleGetAccountAddress = async () => {
-  //   const pubKey = await invokeSnap({
-  //     method: 'getAccountAddress',
-  //     params: {
-  //       derivationPath: [activeAccount], // Use active account
-  //       confirm: true,
-  //     },
-  //   });
-  //   console.log(pubKey);
-  // };
 
   const handleJSR = async () => {
     const data = await invokeSnap({ method: 'jsr' });
@@ -240,9 +250,9 @@ const Index = () => {
     });
   };
   const handleCreateNewAccount = async () => {
-    const index = parseInt(accounts[accounts.length - 1]?.name.split(' ')[1] as string, 10);
+    const index = accounts.length;
     if (!index) console.error('index isn\'t defined');
-    const newDerivationPath = [`${index + 1}'`, "0'"];
+    const newDerivationPath = [`${index}'`, "0'"];
 
     const res = await invokeSnap({
       method: 'createNewAccount',
@@ -251,14 +261,31 @@ const Index = () => {
       },
     });
     console.log(res);
+
+    // if (res) {
+    //   setAccounts((prev) => [
+    //     ...prev,
+    //     {
+    //       name: `Account ${index}`,
+    //       derivationPath: [`${index}'`, "0'"]
+    //     },
+    //   ])
+    // }
+
     if (res) {
-      setAccounts((prev) => [
-        ...prev,
-        {
-          name: `Account ${index + 1}`,
-          derivationPath: [`${index + 1}'`, "0'"]
-        },
-      ])
+      const newAccount = {
+        name: `Account ${index}`,
+        derivationPath: newDerivationPath,
+      };
+      const updatedAccounts = [...accounts, newAccount];
+      setAccounts(updatedAccounts);
+      setActiveAccount(newAccount);
+
+      // Save accounts to MetaMask storage
+      await invokeSnap({
+        method: 'setData',
+        params: { key: 'accounts', value: updatedAccounts },
+      });
     }
     return;
   };
@@ -315,6 +342,36 @@ const Index = () => {
     });
     console.log(res);
   };
+  const handleSetData = async () => {
+    const res = await invokeSnap({
+      method: 'setData',
+      params: {
+        key: storageKey || 'cool',
+        value: storageValue || 'its fine',
+      },
+    });
+    console.log(res);
+  };
+  const handleGetData = async () => {
+    const res = await invokeSnap({
+      method: 'getData',
+      // params: {
+      //   derivationPath: activeAccount?.derivationPath,
+      //   message: messageText || 'Jai Siyaram!',
+      // },
+    });
+    console.log(res);
+  };
+  const handleClearData = async () => {
+    const res = await invokeSnap({
+      method: 'clearData',
+      // params: {
+      //   derivationPath: activeAccount?.derivationPath,
+      //   message: messageText || 'Jai Siyaram!',
+      // },
+    });
+    console.log(res);
+  };
 
   const handleChange = (e) => {
     switch (e.target.name) {
@@ -330,6 +387,14 @@ const Index = () => {
         setMessageText(e.target.value);
         break;
       }
+      case 'storageKey': {
+        setStorageKey(e.target.value);
+        break;
+      }
+      case 'storageValue': {
+        setStorageValue(e.target.value);
+        break;
+      }
 
       default:
         break;
@@ -343,9 +408,10 @@ const Index = () => {
       </Heading>
       <Subtitle>
         Get started by clicking on buttons below.
+        <button type="button" onClick={() => setToggleFetch(!toggleFetch)}>toggleFetch</button>
       </Subtitle>
       <br />
-      <AccountDropdown accounts={accounts} setActiveAccount={setActiveAccount} />
+      <AccountDropdown setToggleFetch={setToggleFetch} toggleFetch={toggleFetch} accounts={accounts} setActiveAccount={setActiveAccount} />
       <CardContainer>
         {error && (
           <ErrorMessage>
@@ -494,13 +560,41 @@ const Index = () => {
         />
         <Card
           content={{
-            title: 'Accounts Details',
+            title: 'Active Accounts Details',
             description:
               <>
-                <button onClick={handleGetAccountAddress} disabled={!installedSnap} >Get AccountAddress</button> <br />
-                <button onClick={handleGetPublicKey} disabled={!installedSnap} >Get Public Key</button> <br />
-                <button onClick={handleGetPrivateKey} disabled={!installedSnap} >Get Private Key</button>
+                <button onClick={handleGetAccountAddress} disabled={!installedSnap} >Get AccountAddress</button> <br /> <hr style={{ border: '0px', margin: '4px' }} />
+                <button onClick={handleGetPublicKey} disabled={!installedSnap} >Get PublicKey</button> &nbsp;
+                <button onClick={handleGetPrivateKey} disabled={!installedSnap} >Get PrivateKey</button>
               </>,
+          }}
+          disabled={!installedSnap}
+          fullWidth={
+            isMetaMaskReady &&
+            Boolean(installedSnap) &&
+            !shouldDisplayReconnectButton(installedSnap)
+          }
+        />
+        <Card
+          content={{
+            title: 'Encrypt & Save Data',
+            description:
+              <>
+                <label htmlFor="receiverAddress">Key: </label>
+                <input type="text" name="storageKey" id="storageKey" placeholder='storage Key...' value={storageKey} onChange={handleChange} /> <br />
+                <label htmlFor="amount">Value: </label>
+                <input type="text" name="storageValue" id="storageValue" placeholder='Value to store...' value={storageValue} onChange={handleChange} /> <br /><br />
+                <button onClick={handleSetData} disabled={!installedSnap} >Send Data</button> &nbsp;
+                <button onClick={handleGetData} disabled={!installedSnap} >Get Data</button> &nbsp;
+                <button onClick={handleClearData} disabled={!installedSnap} >Clear</button>
+              </>,
+            // 'Display a custom message within a confirmation screen in MetaMask.',
+            // button: (
+            //   <SendHelloButton
+            //     onClick={handleSetData}
+            //     disabled={!installedSnap}
+            //   />
+            // ),
           }}
           disabled={!installedSnap}
           fullWidth={

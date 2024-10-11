@@ -1,6 +1,6 @@
 import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 import type { Account, RawTransaction } from '@aptos-labs/ts-sdk';
-import type { OnRpcRequestHandler } from '@metamask/snaps-sdk';
+import type { Json, JsonRpcParams, OnRpcRequestHandler } from '@metamask/snaps-sdk';
 import {
   Box,
   Text,
@@ -13,110 +13,10 @@ import {
 } from '@metamask/snaps-sdk/jsx';
 
 import { getAccount, getAccountAddress, getPrivateKey, getPublicKey } from './cryptoUtils';
-import { bytesToHex, hexToBytes } from './utils';
-
-const MY_ACC_ADD =
-  '0xc90b06d25184c230dffa5b7263180a194c7a4f3e1c29d6470c3feafece0372b8';
-const APTOS_COIN = '0x1::aptos_coin::AptosCoin';
-const COIN_STORE = `0x1::coin::CoinStore<${APTOS_COIN}>`;
-const INITIAL_BALANCE = 100_000_000;
-const accounts = ['1', '3'];
-
-// const selectAccountInterface = await snap.request({
-//   method: 'snap_createInterface',
-//   params: {
-//     ui: (
-//       <Box>
-//         <Text>Select an Account</Text>
-//         <Dropdown name='currency'>
-//           {/* {
-//             accounts.map((item, index) => (
-//               <Option value={item}>Account {item}</Option>
-//             )
-//           } */}
-//           <Option value='1'>Account 1</Option>
-//           <Option value='2'>Account 2</Option>
-//           <Option value='3'>Account 3</Option>
-//         </Dropdown>
-//       </Box>
-//     ),
-//   },
-// });
-
-// await snap.request({
-//   method: 'snap_dialog',
-//   params: {
-//     type: 'Alert',
-//     id: selectAccountInterface,
-//   },
-// });
-
-/**
- * Stringify and handle bigints.
- *
- * @param obj - any object that is suitble.
- * @returns the updated object.
- * @throws when its not met.
- */
-function stringifyBigInts(obj: any): any {
-  if (typeof obj === 'bigint') {
-    return obj.toString(); // Convert BigInt to string
-  } else if (Array.isArray(obj)) {
-    return obj.map(stringifyBigInts); // Recursively convert BigInt in arrays
-  } else if (typeof obj === 'object' && obj !== null) {
-    return Object.fromEntries(
-      Object.entries(obj).map(([key, value]) => [key, stringifyBigInts(value)]),
-    ); // Recursively convert BigInt in objects
-  }
-  return obj; // Return other types as-is
-}
-/**
- *
- * @param obj
- */
-function convertBytesToHexRecursively(obj: any[] | RawTransaction | null): string | any | any[] {
-  if (Array.isArray(obj)) {
-    return obj.map(convertBytesToHexRecursively);
-  } else if (obj !== null && typeof obj === 'object') {
-    const newObj = {};
-    for (const key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-        // Check if 'data' field exists and convert it to hex
-        if (
-          obj[key] &&
-          typeof obj[key] === 'object' &&
-          obj[key].data !== undefined
-        ) {
-          newObj[key] = bytesToHex(Object.values(obj[key].data));
-        } else if (key === 'args' && Array.isArray(obj[key])) {
-          // Special case for 'args' array that contains objects with 'data'
-          newObj[key] = obj[key].map((item) => {
-            if (item.data !== undefined) {
-              return bytesToHex(Object.values(item.data));
-            }
-            return item;
-          });
-        } else {
-          // Recurse through nested objects/arrays
-          newObj[key] = convertBytesToHexRecursively(obj[key]);
-        }
-      }
-    }
-    return newObj;
-  }
-  return obj;
-}
-/**
- *
- * @param url
- * @param options
- */
-async function fetchData(
-  url: RequestInfo | URL,
-  options: RequestInit | undefined,
-) {
-  return await fetch(url, options);
-}
+import { bytesToHex, hexToBytes, stringifyBigInts, convertBytesToHexRecursively, fetchData } from './utils';
+import { MY_ACC_ADD, APTOS_COIN, COIN_STORE, INITIAL_BALANCE } from './constants';
+import { Operation, RequestParams, StateData, } from './types';
+import { clearData, getData, setData } from './helpers';
 
 /**
  * Handle incoming JSON-RPC requests, sent through `wallet_invokeSnap`.
@@ -134,7 +34,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
 }) => {
   switch (request.method) {
     case 'getAccountAddress': {
-      const { derivationPath } = request.params ?? {};
+      const { derivationPath }: ((Record<string, Json> | Json[]) & ExactOptionalGuard) & JsonRpcParams = request.params ?? {};
 
       const pubKey: string = await getAccountAddress(derivationPath);
       await snap.request({
@@ -477,6 +377,19 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
 
       return executedTransaction.hash;
     }
+    case 'setData': {
+      return setData(request.params);
+    }
+
+    case 'getData': {
+      return getData();
+    }
+
+    case 'clearData': {
+      return clearData();
+    }
+
+
     case 'jsr': {
       const response = await fetchData('https://api.testnet.aptoslabs.com/v1', {
         method: 'GET',
