@@ -408,7 +408,7 @@ const Index = () => {
       </Heading>
       <Subtitle>
         Get started by clicking on buttons below.
-        <button type="button" onClick={() => setToggleFetch(!toggleFetch)}>toggleFetch</button>
+        {/* <button type="button" onClick={() => setToggleFetch(!toggleFetch)}>toggleFetch</button> */}
       </Subtitle>
       <br />
       <AccountDropdown setToggleFetch={setToggleFetch} toggleFetch={toggleFetch} accounts={accounts} setActiveAccount={setActiveAccount} />
