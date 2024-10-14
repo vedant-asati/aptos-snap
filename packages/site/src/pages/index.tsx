@@ -209,7 +209,7 @@ const Index = () => {
 
   useEffect(() => {
     getData();
-    return console.log("hi")
+    return;
   }, [toggleFetch]);
 
   const [txnReceiverAddress, setTxnReceiverAddress] = useState<string>('');
@@ -299,8 +299,8 @@ const Index = () => {
     console.log(res);
   };
   const handleSendTxn = async () => {
-    console.log(txnReceiverAddress)
-    console.log(txnAmount)
+    console.log("Receiver Address: ", txnReceiverAddress)
+    console.log("Txn Amount: ", txnAmount)
     const res = await invokeSnap({
       method: 'sign&sendTxn',
       params: {
@@ -311,7 +311,7 @@ const Index = () => {
         }
       },
     });
-    console.log(res);
+    console.log("Confirmed Transaction with txn hash: ", res);
   };
   const handleTestSignTxn = async () => {
     const res = await invokeSnap({

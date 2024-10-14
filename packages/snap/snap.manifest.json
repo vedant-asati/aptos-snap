@@ -4,14 +4,14 @@
   "proposedName": "Aptos Wallet",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MetaMask/template-snap-monorepo.git"
+    "url": "https://github.com/vedant-asati/aptos-snap.git"
   },
   "source": {
-    "shasum": "SJlOf5xSJo0OzGrCV6v4koRR1R/pHKpKKZnEvtWYEA0=",
+    "shasum": "DB6GPREdbwM5yF4H16wJjNrT2ucSkqQqxyL4B3PMoP4=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
-        "packageName": "snap",
+        "packageName": "aptos-connect",
         "registry": "https://registry.npmjs.org/"
       }
     }
