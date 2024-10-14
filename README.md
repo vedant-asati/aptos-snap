@@ -54,6 +54,8 @@ packages/
 - **getData**: Retrieve data.
 - **clearData**: Clear all data.
 
+Check more about all rpc methods [here](./packages/snap/src/index.tsx).
+
 
 <!-- ## Usage
 
