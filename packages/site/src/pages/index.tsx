@@ -407,7 +407,7 @@ const Index = () => {
         Welcome to <Span>Aptos-snap Interface</Span>
       </Heading>
       <Subtitle>
-        Get started by clicking on buttons below.
+        Get started by interacting with the buttons below.
         {/* <button type="button" onClick={() => setToggleFetch(!toggleFetch)}>toggleFetch</button> */}
       </Subtitle>
       <br />
@@ -496,11 +496,6 @@ const Index = () => {
             ),
           }}
           disabled={!installedSnap}
-          fullWidth={
-            isMetaMaskReady &&
-            Boolean(installedSnap) &&
-            !shouldDisplayReconnectButton(installedSnap)
-          }
         />
         <Card
           content={{
@@ -521,11 +516,6 @@ const Index = () => {
             ),
           }}
           disabled={!installedSnap}
-          fullWidth={
-            isMetaMaskReady &&
-            Boolean(installedSnap) &&
-            !shouldDisplayReconnectButton(installedSnap)
-          }
         />
         <Card
           content={{
@@ -536,11 +526,6 @@ const Index = () => {
               </>,
           }}
           disabled={!installedSnap}
-          fullWidth={
-            isMetaMaskReady &&
-            Boolean(installedSnap) &&
-            !shouldDisplayReconnectButton(installedSnap)
-          }
         />
         <Card
           content={{
@@ -548,15 +533,10 @@ const Index = () => {
             description:
               <>
                 <button onClick={handleTestSignTxn} disabled={!installedSnap} >Sign Test Txn</button>
-                <button onClick={handleSignTxns} disabled={!installedSnap}>Sign Multi Txn</button>
+                {/* <button onClick={handleSignTxns} disabled={!installedSnap}>Sign Multi Txn</button> */}
               </>,
           }}
           disabled={!installedSnap}
-          fullWidth={
-            isMetaMaskReady &&
-            Boolean(installedSnap) &&
-            !shouldDisplayReconnectButton(installedSnap)
-          }
         />
         <Card
           content={{
@@ -569,11 +549,6 @@ const Index = () => {
               </>,
           }}
           disabled={!installedSnap}
-          fullWidth={
-            isMetaMaskReady &&
-            Boolean(installedSnap) &&
-            !shouldDisplayReconnectButton(installedSnap)
-          }
         />
         <Card
           content={{
@@ -597,11 +572,6 @@ const Index = () => {
             // ),
           }}
           disabled={!installedSnap}
-          fullWidth={
-            isMetaMaskReady &&
-            Boolean(installedSnap) &&
-            !shouldDisplayReconnectButton(installedSnap)
-          }
         />
 
         <Notice>
