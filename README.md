@@ -1,53 +1,151 @@
-# @metamask/template-snap-monorepo
+# MetaMask Snap for Aptos
+[![NPM Version](https://img.shields.io/npm/v/aptos-connect.svg)](https://www.npmjs.com/package/aptos-connect)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/d2fdddce-cf7f-420f-86db-92d59f3e45c0/deploy-status)](https://app.netlify.com/sites/aptos/deploys)
 
-This repository demonstrates how to develop a snap with TypeScript. For detailed
-instructions, see [the MetaMask documentation](https://docs.metamask.io/guide/snaps.html#serving-a-snap-to-your-local-environment).
+Aptos Connect is a MetaMask Snap that allows users to interact with the Aptos blockchain directly from MetaMask. This snap provides various Aptos-related functionalities, such as generating accounts, signing messages, and sending transactions.
 
-MetaMask Snaps is a system that allows anyone to safely expand the capabilities
-of MetaMask. A _snap_ is a program that we run in an isolated environment that
-can customize the wallet experience.
+## Live Demo
+#### Example website: https://aptos.netlify.app/
 
-## Snaps is pre-release software
+#### Demo Video: https://youtu.be/f2-FAUYnf-g
 
-To interact with (your) Snaps, you will need to install [MetaMask Flask](https://metamask.io/flask/),
-a canary distribution for developers that provides access to upcoming features.
+## Installation
+To use Aptos Connect in your project, install the npm package:
 
-## Getting Started
-
-Clone the template-snap repository [using this template](https://github.com/MetaMask/template-snap-monorepo/generate)
-and set up the development environment:
-
-```shell
-yarn install && yarn start
+```bash
+npm install aptos-connect
 ```
 
-## Cloning
+## Features
 
-This repository contains GitHub Actions that you may find useful, see
-`.github/workflows` and [Releasing & Publishing](https://github.com/MetaMask/template-snap-monorepo/edit/main/README.md#releasing--publishing)
-below for more information.
+- **Account Management:** Generate new Aptos accounts, view public and private keys, and get account addresses.
+- **Transaction Signing:** Sign and send Aptos transactions, including funding accounts and transferring Aptos coins.
+- **Message Signing:** Sign arbitrary messages directly from MetaMask.
+- **Data Persistence:** Save and retrieve data across sessions.
+- **RPC Interaction:** Perform RPC requests to Aptos nodes for account balances, transaction history, and more.
 
-If you clone or create this repository outside the MetaMask GitHub organization,
-you probably want to run `./scripts/cleanup.sh` to remove some files that will
-not work properly outside the MetaMask GitHub organization.
+## Project Structure
 
-If you don't wish to use any of the existing GitHub actions in this repository,
-simply delete the `.github/workflows` directory.
+```bash
+...
+packages/
+  site/        # Frontend application built using Gatsby
+    src/
+      components/  # React components for UI
+      pages/       # Main app pages (index.tsx)
+      utils/       # Helper functions
+  snap/        # MetaMask Snap logic
+    src/
+      cryptoUtils.ts    # Utility functions for key management
+      index.tsx         # Main Snap logic, handling RPC requests
+      utils.ts          # Aptos-specific utilities
+...
+```
 
-## Contributing
+### RPC Methods
 
-### Testing and Linting
+- **getAccountAddress**: Retrieve the Aptos account address for a given derivation path.
+- **getPublicKey**: Get the public key for the specified derivation path.
+- **getPrivateKey**: Obtain the private key (sensitive).
+- **createNewAccount**: Generate a new Aptos account.
+- **signMessage**: Sign a message with the private key.
+- **sign&sendTxn**: Sign and send a transaction on the Aptos blockchain.
+- **setData**: Save data in metamask's encrypted storage.
+- **getData**: Retrieve data.
+- **clearData**: Clear all data.
 
-Run `yarn test` to run the tests once.
 
-Run `yarn lint` to run the linter, or run `yarn lint:fix` to run the linter and
-fix any automatically fixable issues.
+<!-- ## Usage
 
-### Using NPM packages with scripts
+### MetaMask Snap Integration
 
-Scripts are disabled by default for security reasons. If you need to use NPM
-packages with scripts, you can run `yarn allow-scripts auto`, and enable the
-script in the `lavamoat.allowScripts` section of `package.json`.
+To integrate the Aptos Snap into your MetaMask-enabled dApp, invoke the Snap with the `wallet_invokeSnap` method:
 
-See the documentation for [@lavamoat/allow-scripts](https://github.com/LavaMoat/LavaMoat/tree/main/packages/allow-scripts)
-for more information.
+```typescript
+await window.ethereum.request({
+  method: 'wallet_invokeSnap',
+  params: {
+    snapId: 'npm:aptos-connect',
+    request: { method: 'getAccountAddress' }
+  },
+});
+```
+
+You can interact with various RPC methods available in the snap, including:
+
+- `getAccountAddress`
+- `getPublicKey`
+- `getPrivateKey`
+- `createNewAccount`
+- `signMessage`
+- `sign&sendTxn`
+
+For a full list of available methods, see the [snap source code](./packages/snap/src/index.tsx).
+
+### Example: Creating a New Account
+
+```typescript
+const accountAddress = await window.ethereum.request({
+  method: 'wallet_invokeSnap',
+  params: {
+    snapId: 'npm:aptos-connect',
+    request: { method: 'createNewAccount' },
+  },
+});
+console.log('New Account Address:', accountAddress);
+```
+
+### Example: Signing and Sending a Transaction
+
+```typescript
+const txnHash = await window.ethereum.request({
+  method: 'wallet_invokeSnap',
+  params: {
+    snapId: 'npm:aptos-connect',
+    request: {
+      method: 'sign&sendTxn',
+      params: {
+        derivationPath: "m/44'/637'/0'/0'/0'",
+        txnDetails: { receiver: '0x1..', amount: 1000 },
+      },
+    },
+  },
+});
+console.log('Transaction Hash:', txnHash);
+``` -->
+
+## Development
+
+To run the project locally, clone the repository and install dependencies using Yarn:
+
+```bash
+git clone https://github.com/vedant-asati/aptos-snap.git
+yarn install
+yarn start
+```
+
+Frontend development:
+
+```bash
+cd packages/site
+yarn install
+yarn start
+```
+
+Snap development:
+
+```bash
+cd packages/snap
+yarn install
+yarn start
+```
+
+### Using the snap
+
+The production snap is available as Snap ID: `npm:aptos-connect`.
+
+The locally started snap is available as Snap ID: `local:http://localhost:8080`.
+
+## License
+
+This project is licensed under the [Apache 2.0 License](./LICENSE.APACHE2) and [MIT License](./LICENSE.MIT0).
